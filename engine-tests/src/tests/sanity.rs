@@ -79,6 +79,54 @@ fn test_state_format() {
 }
 
 #[test]
+fn test_ecrecover() {
+    // The ecrecover implementation in both the standalone and wasm contract should be the same.
+    let (mut runner, mut signer, _) = initialize_transfer();
+
+    let address = Address::decode("0000000000000000000000000000000000000001").unwrap();
+    let hash =
+        hex::decode("5cc4cee58087de1a2ea481fe9c65c92adc27cff464b7f00a486dc9bf6bb8efb3").unwrap();
+    let sig = hex::decode("32573a0b258f251971a4ec35511c018a7e7bf75a5886534b48d12e47263048a2fe6e03543955255e235388b224704555fd036a954d3ee6dd030d9d1fea1830d71c").unwrap();
+
+    let input = {
+        let mut tmp = [0u8; 128];
+        (&mut tmp[0..32]).copy_from_slice(&hash);
+        tmp[63] = sig[64];
+        (&mut tmp[64..128]).copy_from_slice(&sig[0..64]);
+
+        tmp.to_vec()
+    };
+
+    use aurora_engine_precompiles::Precompile;
+    let ctx = evm::Context {
+        address: Default::default(),
+        caller: Default::default(),
+        apparent_value: U256::zero(),
+    };
+    let standalone_result = aurora_engine_precompiles::secp256k1::ECRecover
+        .run(&input, None, &ctx, false)
+        .unwrap();
+
+    let wasm_result = runner
+        .submit_with_signer(&mut signer, |nonce| {
+            aurora_engine_transactions::legacy::TransactionLegacy {
+                nonce,
+                gas_price: U256::zero(),
+                gas_limit: u64::MAX.into(),
+                to: Some(address),
+                value: Wei::zero(),
+                data: input,
+            }
+        })
+        .unwrap();
+
+    assert_eq!(
+        standalone_result.output,
+        test_utils::unwrap_success(wasm_result)
+    );
+}
+
+#[test]
 fn test_deploy_contract() {
     let (mut runner, mut signer, _) = initialize_transfer();
 

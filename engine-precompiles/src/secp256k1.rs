@@ -52,7 +52,7 @@ fn internal_impl(hash: H256, signature: &[u8]) -> Result<Address, ExitError> {
     Err(ExitError::Other(Borrowed(sdk::ECRecoverErr.as_str())))
 }
 
-pub(super) struct ECRecover;
+pub struct ECRecover;
 
 impl ECRecover {
     pub(super) const ADDRESS: Address = super::make_address(0, 1);
