@@ -1,6 +1,7 @@
 use crate::prelude::U256;
 use criterion::{BatchSize, BenchmarkId, Criterion};
 use secp256k1::SecretKey;
+use std::time::{Instant};
 
 use crate::test_utils::erc20::{ERC20Constructor, ERC20};
 use crate::test_utils::{address_from_secret_key, deploy_evm, sign_transaction, SUBMIT};
@@ -84,20 +85,12 @@ pub(crate) fn eth_erc20_benchmark(c: &mut Criterion) {
     println!("ETH_ERC20_TRANSFER NEAR GAS: {:?}", gas);
     println!("ETH_ERC20_TRANSFER ETH GAS: {:?}", eth_gas);
 
-    // measure transfer wall-clock time
-    group.bench_function(transfer_id, |b| {
-        b.iter_batched(
-            || {
-                (
-                    runner.one_shot(),
-                    calling_account_id,
-                    transfer_tx_bytes.clone(),
-                )
-            },
-            |(r, c, i)| r.call(SUBMIT, c, i),
-            BatchSize::SmallInput,
-        )
-    });
+    let start = Instant::now();
+    
+    for _ in 0..1000 {
+        runner.one_shot().call(SUBMIT, calling_account_id, transfer_tx_bytes.clone());
+    }
 
-    group.finish();
+    let duration = start.elapsed();
+    println!("Time elapsed in benchmark is: {:?}", duration);
 }

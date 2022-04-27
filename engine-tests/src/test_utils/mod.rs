@@ -503,6 +503,7 @@ impl Default for AuroraRunner {
     fn default() -> Self {
         let aurora_account_id = "aurora".to_string();
         let evm_wasm_bytes = if cfg!(feature = "mainnet-test") {
+           // println!("reading mainnet wasm file...");
             std::fs::read("../mainnet-test.wasm").unwrap()
         } else if cfg!(feature = "testnet-test") {
             std::fs::read("../testnet-test.wasm").unwrap()
@@ -513,6 +514,7 @@ impl Default for AuroraRunner {
         // Fetch config (mainly costs) for the latest protocol version.
         let runtime_config_store = RuntimeConfigStore::new(None);
         let runtime_config = runtime_config_store.get_config(PROTOCOL_VERSION);
+        // println!("runtime wasm config {:?}", runtime_config.wasm_config.clone());
         let wasm_config = runtime_config.wasm_config.clone();
 
         Self {
